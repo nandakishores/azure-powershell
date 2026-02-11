@@ -548,7 +548,7 @@ Preview modules are not included in this list. Read more about [module version t
   - This change will take effect on '11/3/2025'- The change is expected to take effect from Az version : '15.0.0'
   - The change is expected to take effect in 'Az.Monitor' from version : '7.0.0'
 
-- Parameter breaking-change will happen to parameter set `NewAzDiagnosticSetting_CreateExpanded`
+- Parameter breaking-change will happen to all parameter sets
   - `-Log`
     - The parameter : 'Log' is changing.
     The type of the parameter is changing from 'Array' to 'List'.
@@ -575,7 +575,7 @@ Preview modules are not included in this list. Read more about [module version t
   - This change will take effect on '11/3/2025'- The change is expected to take effect from Az version : '15.0.0'
   - The change is expected to take effect in 'Az.Monitor' from version : '7.0.0'
 
-- Parameter breaking-change will happen to parameter set `NewAzSubscriptionDiagnosticSetting_CreateExpanded`
+- Parameter breaking-change will happen to all parameter sets
   - `-Log`
     - The parameter : 'Log' is changing.
     The type of the parameter is changing from 'Array' to 'List'.
@@ -839,7 +839,7 @@ Preview modules are not included in this list. Read more about [module version t
   - This change will take effect on '11/3/2025'- The change is expected to take effect from Az version : '15.0.0'
   - The change is expected to take effect in 'Az.Resources' from version : '9.0.0'
 
-- Parameter breaking-change will happen to all parameter sets
+- Parameter breaking-change will happen to parameter set `UpdateAzRoleManagementPolicy_UpdateExpanded`
   - `-Rule`
     - The parameter : 'Rule' is changing.
     The type of the parameter is changing from 'Array' to 'List'.
@@ -847,6 +847,11 @@ Preview modules are not included in this list. Read more about [module version t
     - The change is expected to take effect in 'Az.Resources' from version : '9.0.0'
 
 - Parameter breaking-change will happen to parameter set `UpdateAzRoleManagementPolicy_UpdateViaIdentityExpanded`
+  - `-Rule`
+    - The parameter : 'Rule' is changing.
+    The type of the parameter is changing from 'Array' to 'List'.
+    - This change will take effect on '11/3/2025'- The change is expected to take effect from Az version : '15.0.0'
+    - The change is expected to take effect in 'Az.Resources' from version : '9.0.0'
 
 ## Az.SecurityInsights
 
@@ -1133,21 +1138,47 @@ Preview modules are not included in this list. Read more about [module version t
     - This change will take effect on '11/1/2025'- The change is expected to take effect from Az version : '15.0.0'
     - The change is expected to take effect from version : '3.0.0'
 
-## Az.Storage
+## Az.StorageAction
 
-### `New-AzStorageAccount`
+### `Get-AzStorageActionTask`
 
-- Parameter breaking-change will happen to all parameter sets
-  - `-MinimumTlsVersion`
-    - The MinimumTlsVersion parameter will no longer allow TLS 1.0 or TLS 1.1. TLS 1.2 or later will be required.
-    - This change is expected to take effect from Az.Storage version: 9.7.0 and Az version: 15.4.0
+- Cmdlet breaking-change will happen to all parameter sets
+  - The output type 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IStorageTask' is changing
+  - The following properties in the output type are being deprecated : 'IdentityUserAssignedIdentity'
+  - The following properties are being added to the output type : 'IdentityUserAssignedIdentity'
+  - Change description : The types of the property 'IdentityUserAssignedIdentity' will be changed from 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IUserAssignedIdentities' to 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IManagedServiceIdentityUserAssignedIdentities' 
+  - This change will take effect on '5/1/2026'- The change is expected to take effect from Az version : '16.0.0'
+  - The change is expected to take effect in 'Az.StorageAction' from version : '2.0.0'
 
-### `Set-AzStorageAccount`
+### `New-AzStorageActionTask`
 
-- Parameter breaking-change will happen to all parameter sets
-  - `-MinimumTlsVersion`
-    - The MinimumTlsVersion parameter will no longer allow TLS 1.0 or TLS 1.1. TLS 1.2 or later will be required.
-    - This change is expected to take effect from Az.Storage version: 9.7.0 and Az version: 15.4.0
+- Cmdlet breaking-change will happen to all parameter sets
+  - The output type 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IStorageTask' is changing
+  - The following properties in the output type are being deprecated : 'IdentityUserAssignedIdentity'
+  - The following properties are being added to the output type : 'IdentityUserAssignedIdentity'
+  - Change description : The types of the property 'IdentityUserAssignedIdentity' will be changed from 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IUserAssignedIdentities' to 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IManagedServiceIdentityUserAssignedIdentities' 
+  - This change will take effect on '5/1/2026'- The change is expected to take effect from Az version : '16.0.0'
+  - The change is expected to take effect in 'Az.StorageAction' from version : '2.0.0'
+
+### `Remove-AzStorageActionTask`
+
+- Cmdlet breaking-change will happen to all parameter sets
+  - The output type 'bool' is changing
+  - The following properties in the output type are being deprecated : 'IdentityUserAssignedIdentity'
+  - The following properties are being added to the output type : 'IdentityUserAssignedIdentity'
+  - Change description : The types of the property 'IdentityUserAssignedIdentity' will be changed from 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IUserAssignedIdentities' to 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IManagedServiceIdentityUserAssignedIdentities' 
+  - This change will take effect on '5/1/2026'- The change is expected to take effect from Az version : '16.0.0'
+  - The change is expected to take effect in 'Az.StorageAction' from version : '2.0.0'
+
+### `Update-AzStorageActionTask`
+
+- Cmdlet breaking-change will happen to all parameter sets
+  - The output type 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IStorageTask' is changing
+  - The following properties in the output type are being deprecated : 'IdentityUserAssignedIdentity'
+  - The following properties are being added to the output type : 'IdentityUserAssignedIdentity'
+  - Change description : The types of the property 'IdentityUserAssignedIdentity' will be changed from 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IUserAssignedIdentities' to 'Microsoft.Azure.PowerShell.Cmdlets.StorageAction.Models.IManagedServiceIdentityUserAssignedIdentities' 
+  - This change will take effect on '5/1/2026'- The change is expected to take effect from Az version : '16.0.0'
+  - The change is expected to take effect in 'Az.StorageAction' from version : '2.0.0'
 
 ## Az.StreamAnalytics
 
