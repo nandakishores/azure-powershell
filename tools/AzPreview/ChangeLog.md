@@ -1,3 +1,36 @@
+## 15.4.0 - February 2025
+#### Az.ArtifactSigning 0.1.5
+* Renamed from Az.TrustedSigning
+
+#### Az.ElasticSan 1.7.0
+* Supported auto scale when creating and updating an Elastic SAN.
+    - 'New-AzElasticSan'
+    - 'Update-AzElasticSan'
+* Supported checking whether disk snapshot backup can be taken for volumes.
+    - 'Test-AzElasticSanVolumeBackup'
+    - 'Test-AzElasticSanVolumeRestore'
+
+#### Az.Network 7.25.1
+* Onboarded 'Microsoft.DataReplication/replicationVaults' to Private Link Common Cmdlets
+
+#### Az.Resources 9.0.2
+* Updated the implementation of -Metadata parameter processing for cmdlets that use it for security. No behavior change.
+
+#### Az.VMware 0.9.0
+* Updated the AVS VMware cmdlets api version to '2025-09-01'. 
+* Added cmdlet:
+    - 'Get-AzVMwareLicense'
+    - 'Get-AzVMwareLicenseProperty'
+    - 'Get-AzVMwareMaintenance'
+    - 'Get-AzVMwarePrivateCloudVcfLicense'
+    - 'Invoke-AzVMwareInitiateMaintenanceCheck'
+    - 'Invoke-AzVMwareRescheduleMaintenance'
+    - 'Invoke-AzVMwareScheduleMaintenance'
+    - 'New-AzVMwareLicense'
+    - 'Remove-AzVMwareLicense'
+    - 'Update-AzVMwareLicense'
+    - 'Test-AzVMwareServiceComponentAvailability'
+
 ## 15.3.0 - February 2026
 #### Az.Aks 7.1.1
 * Fixed the default SSH key generation logic in 'New-AzAksCluster' to enforce RSA key type (instead of ed25519 that became the default in OpenSSH 9.4 and above)

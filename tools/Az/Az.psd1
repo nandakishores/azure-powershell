@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '15.3.0'
+ModuleVersion = '15.4.0'
 
 # Supported PSEditions
 CompatiblePSEditions = 'Core', 'Desktop'
@@ -91,7 +91,7 @@ RequiredModules = @(@{ModuleName = 'Az.Accounts'; ModuleVersion = '5.3.2'; },
                @{ModuleName = 'Az.DevTestLabs'; RequiredVersion = '1.1.0'; }, 
                @{ModuleName = 'Az.Dns'; RequiredVersion = '2.0.0'; }, 
                @{ModuleName = 'Az.DnsResolver'; RequiredVersion = '1.2.1'; }, 
-               @{ModuleName = 'Az.ElasticSan'; RequiredVersion = '1.6.0'; }, 
+               @{ModuleName = 'Az.ElasticSan'; RequiredVersion = '1.7.0'; }, 
                @{ModuleName = 'Az.EventGrid'; RequiredVersion = '2.2.0'; }, 
                @{ModuleName = 'Az.EventHub'; RequiredVersion = '5.4.0'; }, 
                @{ModuleName = 'Az.Fabric'; RequiredVersion = '1.0.0'; }, 
@@ -117,7 +117,7 @@ RequiredModules = @(@{ModuleName = 'Az.Accounts'; ModuleVersion = '5.3.2'; },
                @{ModuleName = 'Az.Monitor'; RequiredVersion = '7.0.0'; }, 
                @{ModuleName = 'Az.MySql'; RequiredVersion = '1.5.1'; }, 
                @{ModuleName = 'Az.NetAppFiles'; RequiredVersion = '1.0.0'; }, 
-               @{ModuleName = 'Az.Network'; RequiredVersion = '7.25.0'; }, 
+               @{ModuleName = 'Az.Network'; RequiredVersion = '7.25.1'; }, 
                @{ModuleName = 'Az.NetworkCloud'; RequiredVersion = '2.0.0'; }, 
                @{ModuleName = 'Az.Nginx'; RequiredVersion = '2.0.0'; }, 
                @{ModuleName = 'Az.NotificationHubs'; RequiredVersion = '1.2.0'; }, 
@@ -133,7 +133,7 @@ RequiredModules = @(@{ModuleName = 'Az.Accounts'; ModuleVersion = '5.3.2'; },
                @{ModuleName = 'Az.Relay'; RequiredVersion = '3.0.0'; }, 
                @{ModuleName = 'Az.ResourceGraph'; RequiredVersion = '1.2.1'; }, 
                @{ModuleName = 'Az.ResourceMover'; RequiredVersion = '1.3.1'; }, 
-               @{ModuleName = 'Az.Resources'; RequiredVersion = '9.0.1'; }, 
+               @{ModuleName = 'Az.Resources'; RequiredVersion = '9.0.2'; }, 
                @{ModuleName = 'Az.Security'; RequiredVersion = '1.8.0'; }, 
                @{ModuleName = 'Az.SecurityInsights'; RequiredVersion = '3.2.1'; }, 
                @{ModuleName = 'Az.ServiceBus'; RequiredVersion = '4.1.1'; }, 
