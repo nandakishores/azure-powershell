@@ -22,12 +22,15 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $Share[0].Name $shareName
 
     # upload file
-    $uploadErr = $null
-    $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob -ErrorVariable uploadErr -ErrorAction SilentlyContinue
-    $diag = "[Upload-DIAG] isNull=$($null -eq $t), errCount=$($uploadErr.Count)"
-    if ($uploadErr.Count -gt 0) {
-        $diag += ", errors=[$($uploadErr | ForEach-Object { $_.Exception.Message } | Join-String -Separator '; ')]"
+    $t = $null
+    $uploadCmdletErr = $null
+    try {
+        $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob
     }
+    catch {
+        $uploadCmdletErr = $_.Exception.Message
+    }
+    $diag = "[Upload-DIAG] isNull=$($null -eq $t), cmdletException='$uploadCmdletErr'"
     if ($null -ne $t) {
         $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
         $t | Wait-Job
@@ -41,11 +44,9 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
         $diag += ", stateAfterReceive=$($t.State)"
     }
     else {
-        $diag += ", CONCLUSION: `$t is NULL - cmdlet wrote to error stream instead of output stream"
+        $diag += ", CONCLUSION: `$t is NULL - cmdlet produced no output"
     }
-    if ($t.State -ne "Completed") {
-        throw "[Upload] -AsJob State='$($t.State)' expected='Completed'. $diag"
-    }
+    Assert-AreEqual "Completed" $t.State "[Upload] expected State='Completed' but got='$($t.State)'. $diag"
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -90,12 +91,15 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $file[0].Name $objectName1
     Assert-AreEqual $file[1].Name $objectName2
 
-    $downloadErr = $null
-    $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob -ErrorVariable downloadErr -ErrorAction SilentlyContinue
-    $diag = "[Download-DIAG] isNull=$($null -eq $t), errCount=$($downloadErr.Count)"
-    if ($downloadErr.Count -gt 0) {
-        $diag += ", errors=[$($downloadErr | ForEach-Object { $_.Exception.Message } | Join-String -Separator '; ')]"
+    $t = $null
+    $downloadCmdletErr = $null
+    try {
+        $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob
     }
+    catch {
+        $downloadCmdletErr = $_.Exception.Message
+    }
+    $diag = "[Download-DIAG] isNull=$($null -eq $t), cmdletException='$downloadCmdletErr'"
     if ($null -ne $t) {
         $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
         $t | Wait-Job
@@ -109,11 +113,9 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
         $diag += ", stateAfterReceive=$($t.State)"
     }
     else {
-        $diag += ", CONCLUSION: `$t is NULL - cmdlet wrote to error stream instead of output stream"
+        $diag += ", CONCLUSION: `$t is NULL - cmdlet produced no output"
     }
-    if ($t.State -ne "Completed") {
-        throw "[Download] -AsJob State='$($t.State)' expected='Completed'. $diag"
-    }
+    Assert-AreEqual "Completed" $t.State "[Download] expected State='Completed' but got='$($t.State)'. $diag"
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 

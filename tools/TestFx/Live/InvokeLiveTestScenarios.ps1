@@ -77,6 +77,8 @@ $totalJobsCount = $liveJobs.Count
 $completedJobsCount = 0
 $queuedJobs = $liveJobs
 while ($queuedJobs.Count -gt 0) {
+    Start-Sleep -Seconds 60
+
     $waitingJobs = [System.Collections.Generic.List[PSObject]]::new()
     $runningJobs = [System.Collections.Generic.List[PSObject]]::new()
     $completedJobs = [System.Collections.Generic.List[PSObject]]::new()
@@ -144,10 +146,6 @@ while ($queuedJobs.Count -gt 0) {
     $runningModules = ($runningJobs | Select-Object -ExpandProperty Module) -join ", "
     $progressMsg = "Total: $totalJobsCount | Waiting: $($waitingJobs.Count) | Running: $($runningJobs.Count) [$runningModules] | Completed: $completedJobsCount"
     Write-Output "##vso[task.setprogress value=$progressValue;]$progressMsg"
-
-    if ($queuedJobs.Count -gt 0) {
-        Start-Sleep -Seconds 60
-    }
 }
 
 $accountsDir = Join-Path -Path $srcDir -ChildPath "Accounts"
