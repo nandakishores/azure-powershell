@@ -24,32 +24,28 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     # upload file
     $uploadErr = $null
     $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob -ErrorVariable uploadErr -ErrorAction SilentlyContinue
-    Write-Output "##[debug][Upload] After -AsJob: `$t is null = $($null -eq $t)"
-    Write-Output "##[debug][Upload] ErrorVariable count = $($uploadErr.Count)"
+    $diag = "[Upload-DIAG] isNull=$($null -eq $t), errCount=$($uploadErr.Count)"
     if ($uploadErr.Count -gt 0) {
-        $uploadErr | ForEach-Object { Write-Output "##[debug][Upload] ERROR: $($_.Exception.Message)" }
+        $diag += ", errors=[$($uploadErr | ForEach-Object { $_.Exception.Message } | Join-String -Separator '; ')]"
     }
     if ($null -ne $t) {
-        Write-Output "##[debug][Upload] `$t type = $($t.GetType().FullName), Id = $($t.Id), State before Wait = $($t.State)"
-    }
-    else {
-        Write-Output "##[debug][Upload] `$t is NULL - the cmdlet produced no pipeline output. This is the root cause."
-        Write-Output "##[debug][Upload] Retrying without -AsJob to verify cmdlet works..."
-        Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -ErrorAction Stop
-        Write-Output "##[debug][Upload] Synchronous upload succeeded. Creating a fake completed state for testing continuity."
-    }
-    if ($null -ne $t) {
+        $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
         $t | Wait-Job
-        Write-Output "##[debug][Upload] State after Wait-Job = $($t.State), HasMoreData = $($t.HasMoreData)"
-        Write-Output "##[debug][Upload] JobStateInfo.State = $($t.JobStateInfo.State), JobStateInfo.Reason = $($t.JobStateInfo.Reason)"
-        Write-Output "##[debug][Upload] ChildJobs.Count = $($t.ChildJobs.Count)"
+        $diag += ", stateAfterWait=$($t.State), hasMoreData=$($t.HasMoreData)"
+        $diag += ", jobStateInfo=$($t.JobStateInfo.State), reason=$($t.JobStateInfo.Reason)"
+        $diag += ", childJobs=$($t.ChildJobs.Count)"
         if ($t.ChildJobs.Count -gt 0) {
-            $t.ChildJobs | ForEach-Object { Write-Output "##[debug][Upload] ChildJob Id=$($_.Id) State=$($_.State) Error=$($_.Error)" }
+            $t.ChildJobs | ForEach-Object { $diag += ", child(id=$($_.Id) state=$($_.State) err=$($_.Error))" }
         }
         $t | Receive-Job
-        Write-Output "##[debug][Upload] State after Receive-Job = $($t.State)"
+        $diag += ", stateAfterReceive=$($t.State)"
     }
-    Assert-AreEqual "Completed" $t.State
+    else {
+        $diag += ", CONCLUSION: `$t is NULL - cmdlet wrote to error stream instead of output stream"
+    }
+    if ($t.State -ne "Completed") {
+        throw "[Upload] -AsJob State='$($t.State)' expected='Completed'. $diag"
+    }
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -96,33 +92,28 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
 
     $downloadErr = $null
     $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob -ErrorVariable downloadErr -ErrorAction SilentlyContinue
-    Write-Output "##[debug][Download] After -AsJob: `$t is null = $($null -eq $t)"
-    Write-Output "##[debug][Download] ErrorVariable count = $($downloadErr.Count)"
+    $diag = "[Download-DIAG] isNull=$($null -eq $t), errCount=$($downloadErr.Count)"
     if ($downloadErr.Count -gt 0) {
-        $downloadErr | ForEach-Object { Write-Output "##[debug][Download] ERROR: $($_.Exception.Message)" }
+        $diag += ", errors=[$($downloadErr | ForEach-Object { $_.Exception.Message } | Join-String -Separator '; ')]"
     }
     if ($null -ne $t) {
-        Write-Output "##[debug][Download] `$t type = $($t.GetType().FullName), Id = $($t.Id), State before Wait = $($t.State)"
-    }
-    else {
-        Write-Output "##[debug][Download] `$t is NULL - the cmdlet produced no pipeline output. This is the root cause."
-        Write-Output "##[debug][Download] Retrying without -AsJob to verify cmdlet works..."
-        Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -ErrorAction Stop
-        Write-Output "##[debug][Download] Synchronous download succeeded."
-    }
-    if ($null -ne $t) {
+        $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
         $t | Wait-Job
-        Write-Output "##[debug][Download] State after Wait-Job = $($t.State), HasMoreData = $($t.HasMoreData)"
-        Write-Output "##[debug][Download] JobStateInfo.State = $($t.JobStateInfo.State), JobStateInfo.Reason = $($t.JobStateInfo.Reason)"
-        Write-Output "##[debug][Download] ChildJobs.Count = $($t.ChildJobs.Count)"
+        $diag += ", stateAfterWait=$($t.State), hasMoreData=$($t.HasMoreData)"
+        $diag += ", jobStateInfo=$($t.JobStateInfo.State), reason=$($t.JobStateInfo.Reason)"
+        $diag += ", childJobs=$($t.ChildJobs.Count)"
         if ($t.ChildJobs.Count -gt 0) {
-            $t.ChildJobs | ForEach-Object { Write-Output "##[debug][Download] ChildJob Id=$($_.Id) State=$($_.State) Error=$($_.Error)" }
+            $t.ChildJobs | ForEach-Object { $diag += ", child(id=$($_.Id) state=$($_.State) err=$($_.Error))" }
         }
         $t | Receive-Job
-        Write-Output "##[debug][Download] State after Receive-Job = $($t.State)"
+        $diag += ", stateAfterReceive=$($t.State)"
     }
-    Assert-AreEqual "Completed" $t.State
-    Assert-Null $t.Error
+    else {
+        $diag += ", CONCLUSION: `$t is NULL - cmdlet wrote to error stream instead of output stream"
+    }
+    if ($t.State -ne "Completed") {
+        throw "[Download] -AsJob State='$($t.State)' expected='Completed'. $diag"
+    }
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 
