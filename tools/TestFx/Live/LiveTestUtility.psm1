@@ -373,25 +373,21 @@ function Invoke-LiveTestScenario {
 
         do {
             try {
-                $ErrorActionPreference = "Stop"
                 if ($snrRetryCount -eq $script:ScenarioMaxRetryCount) {
-                    $DebugPreference = "Continue"
+                    $prefs = @([psvariable]::new("ErrorActionPreference", "Stop"), [psvariable]::new("DebugPreference", "Continue"))
+                }
+                else {
+                    $prefs = [psvariable]::new("ErrorActionPreference", "Stop")
                 }
 
-                . $ScenarioScript $snrResourceGroup
+                $ScenarioScript.InvokeWithContext($null, $prefs, $snrResourceGroup)
 
                 Write-Output "##[section]Finish executing the live scenario `"$Name`"."
 
                 break
             }
             catch {
-                $snrErrorRecord = if ($_.Exception.InnerException -and $_.Exception.InnerException.PSObject.Properties['ErrorRecord']) {
-                    $_.Exception.InnerException.ErrorRecord
-                } elseif ($_.ErrorRecord) {
-                    $_.ErrorRecord
-                } else {
-                    $_
-                }
+                $snrErrorRecord = $_.Exception.InnerException.ErrorRecord
                 $snrErrorMessage = $snrErrorRecord.Exception.Message
                 $snrErrorDetails = $snrErrorMessage
 

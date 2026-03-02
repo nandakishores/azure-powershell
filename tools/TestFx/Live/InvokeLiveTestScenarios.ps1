@@ -39,6 +39,23 @@ $liveJobs = $liveScenarios | ForEach-Object {
                 [string] $LiveScenarioScript
             )
 
+            # Pin the TypeTable via a strong reference to prevent GC from collecting it.
+            # PSObject uses a WeakReference<TypeTable> internally. In RunspacePool workers,
+            # the fallback path (LocalPipeline TLS) is unavailable, so once GC collects
+            # the TypeTable, ETS properties like Job.State become unresolvable.
+            $__typeTablePin = & {
+                $rs = [runspace]::DefaultRunspace
+                if ($null -ne $rs) {
+                    $prop = $rs.GetType().GetProperty('TypeTable', [System.Reflection.BindingFlags]('Instance,NonPublic'))
+                    if ($null -ne $prop) { $prop.GetValue($rs) }
+                }
+            }
+            if ($null -ne $__typeTablePin) {
+                Write-Output "##[section]TypeTable pinned successfully: $($__typeTablePin.GetType().FullName)"
+            } else {
+                Write-Output "##[warning]Failed to pin TypeTable - ETS properties may be unavailable after GC"
+            }
+
             Import-Module "./tools/TestFx/Assert.ps1" -Force
             Import-Module "./tools/TestFx/Live/LiveTestUtility.psd1" -ArgumentList $Module, $RunPlatform, ${env:DATALOCATION} -Force
             . $LiveScenarioScript
