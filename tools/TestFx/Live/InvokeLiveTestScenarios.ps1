@@ -35,6 +35,16 @@ $liveJobs = $liveScenarios | ForEach-Object {
 
             Import-Module "./tools/TestFx/Assert.ps1" -Force
             Import-Module "./tools/TestFx/Live/LiveTestUtility.psd1" -ArgumentList $Module, $RunPlatform, ${env:DATALOCATION} -Force
+
+            # Fix: ETS ScriptProperty 'State' on System.Management.Automation.Job may not resolve
+            # correctly for AzureLongRunningJob<T> (generic type from external assembly) in runspace
+            # pool contexts. Explicitly register 'State' on the concrete type so ETS finds it
+            # directly without walking the inheritance chain through the generic type hierarchy.
+            Update-TypeData -TypeName "Microsoft.Azure.Commands.Common.AzureLongRunningJob" `
+                -MemberName "State" -MemberType ScriptProperty `
+                -Value { $this.JobStateInfo.State.ToString() } `
+                -Force -ErrorAction SilentlyContinue
+
             . $LiveScenarioScript
         }
     ).AddParameter("Module", $module).AddParameter("RunPlatform", $RunPlatform).AddParameter("LiveScenarioScript", $_)

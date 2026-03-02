@@ -22,14 +22,11 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $Share[0].Name $shareName
 
     # upload file
-    # Note: Use $t.JobStateInfo.State instead of $t.State because the ETS ScriptProperty
-    # 'State' on System.Management.Automation.Job does not work reliably for
-    # AzureLongRunningJob in runspace pool contexts. $t.State returns '' while
-    # $t.JobStateInfo.State correctly returns 'Completed'. This is a known ETS issue.
     $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob
     $t | Wait-Job
     $t | Receive-Job
-    Assert-AreEqual "Completed" $t.JobStateInfo.State
+
+    Assert-AreEqual "Completed" $t.State
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -74,11 +71,11 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $file[0].Name $objectName1
     Assert-AreEqual $file[1].Name $objectName2
 
-    # Note: Use $t.JobStateInfo.State instead of $t.State (see upload comment above)
     $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob
     $t | Wait-Job
     $t | Receive-Job
-    Assert-AreEqual "Completed" $t.JobStateInfo.State
+
+    Assert-AreEqual "Completed" $t.State
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 
