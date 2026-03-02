@@ -26,7 +26,20 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     $t | Wait-Job
     $t | Receive-Job
 
-    Assert-AreEqual "Completed" $t.State
+    # Diagnostic: capture ETS State property resolution details before assertion
+    $Error.Clear()
+    $dState1 = $t.State  # first direct access
+    $dErr1 = if ($Error.Count -gt 0) { "$($Error.Count):$($Error[0].Exception.GetType().Name)" } else { '0' }
+    $sp = $t.PSObject.Properties['State']
+    $dPE = $null -ne $sp  # property exists?
+    $dPT = if ($dPE) { "$($sp.MemberType)" } else { 'N/A' }  # member type
+    $dPV = ''; $dPVE = ''
+    if ($dPE) { try { $dPV = "$($sp.Value)" } catch { $dPVE = "$($_.Exception.GetType().Name)" } }
+    $dTN = ($t.PSObject.TypeNames | Select-Object -First 5) -join '|'
+    $dRS = if ([runspace]::DefaultRunspace) { "$([runspace]::DefaultRunspace.Id):$([runspace]::DefaultRunspace.RunspaceStateInfo.State)" } else { 'null' }
+    $dJSI = "$($t.JobStateInfo.State)"
+    $dMsg = "state1='$dState1' err1=$dErr1 pe=$dPE pt=$dPT pv='$dPV' pve='$dPVE' tn='$dTN' rs=$dRS jsi=$dJSI"
+    Assert-AreEqual "Completed" $t.State $dMsg
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -75,7 +88,20 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     $t | Wait-Job
     $t | Receive-Job
 
-    Assert-AreEqual "Completed" $t.State
+    # Diagnostic: capture ETS State property resolution details before assertion
+    $Error.Clear()
+    $dState1 = $t.State  # first direct access
+    $dErr1 = if ($Error.Count -gt 0) { "$($Error.Count):$($Error[0].Exception.GetType().Name)" } else { '0' }
+    $sp = $t.PSObject.Properties['State']
+    $dPE = $null -ne $sp  # property exists?
+    $dPT = if ($dPE) { "$($sp.MemberType)" } else { 'N/A' }  # member type
+    $dPV = ''; $dPVE = ''
+    if ($dPE) { try { $dPV = "$($sp.Value)" } catch { $dPVE = "$($_.Exception.GetType().Name)" } }
+    $dTN = ($t.PSObject.TypeNames | Select-Object -First 5) -join '|'
+    $dRS = if ([runspace]::DefaultRunspace) { "$([runspace]::DefaultRunspace.Id):$([runspace]::DefaultRunspace.RunspaceStateInfo.State)" } else { 'null' }
+    $dJSI = "$($t.JobStateInfo.State)"
+    $dMsg = "state1='$dState1' err1=$dErr1 pe=$dPE pt=$dPT pv='$dPV' pve='$dPVE' tn='$dTN' rs=$dRS jsi=$dJSI"
+    Assert-AreEqual "Completed" $t.State $dMsg
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 
