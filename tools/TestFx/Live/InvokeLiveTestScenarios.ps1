@@ -12,8 +12,14 @@ param (
     [string] $RunPowerShell
 )
 
+Write-Host "##vso[task.setprogress value=1;]Initializing live test scenarios"
+
 $srcDir = Join-Path -Path ${env:BUILD_SOURCESDIRECTORY} -ChildPath "src"
-$liveScenarios = Get-ChildItem -Path $srcDir -Directory -Exclude "Accounts" -ErrorAction SilentlyContinue | Get-ChildItem -Directory -Filter "LiveTests" -Recurse | Get-ChildItem -File -Filter "TestLiveScenarios.ps1" -Recurse | Select-Object -ExpandProperty FullName
+$targetModules = @("Storage", "Dns", "Automation", "ApplicationInsights", "Databricks", "ContainerInstance")
+$liveScenarios = $targetModules | ForEach-Object {
+    $moduleSrcDir = Join-Path -Path $srcDir -ChildPath $_
+    Get-ChildItem -Path $moduleSrcDir -Directory -Filter "LiveTests" -Recurse -ErrorAction SilentlyContinue
+} | Get-ChildItem -File -Filter "TestLiveScenarios.ps1" -Recurse | Select-Object -ExpandProperty FullName
 
 $maxRunspaces = 9
 [void][int]::TryParse(${env:RSPTHROTTLE}, [ref]$maxRunspaces)
@@ -70,8 +76,6 @@ $liveJobs = $liveScenarios | ForEach-Object {
 $totalJobsCount = $liveJobs.Count
 $completedJobsCount = 0
 $queuedJobs = $liveJobs
-Write-Output "##vso[task.setprogress value=0;]Total: $totalJobsCount | Waiting: $totalJobsCount | Running: 0 | Completed: 0"
-
 while ($queuedJobs.Count -gt 0) {
     $waitingJobs = [System.Collections.Generic.List[PSObject]]::new()
     $runningJobs = [System.Collections.Generic.List[PSObject]]::new()
@@ -139,7 +143,7 @@ while ($queuedJobs.Count -gt 0) {
     }
     $runningModules = ($runningJobs | Select-Object -ExpandProperty Module) -join ", "
     $progressMsg = "Total: $totalJobsCount | Waiting: $($waitingJobs.Count) | Running: $($runningJobs.Count) [$runningModules] | Completed: $completedJobsCount"
-    Write-Output "##vso[task.setprogress value=$progressValue;]$progressMsg"
+    Write-Host "##vso[task.setprogress value=$progressValue;]$progressMsg"
 
     if ($queuedJobs.Count -gt 0) {
         Start-Sleep -Seconds 60

@@ -23,10 +23,24 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
 
     # upload file
     $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob
+    Write-Output "##[debug][Upload] After -AsJob: `$t is null = $($null -eq $t)"
+    if ($null -ne $t) {
+        Write-Output "##[debug][Upload] `$t type = $($t.GetType().FullName), Id = $($t.Id), State before Wait = $($t.State)"
+    }
     $t | Wait-Job
+    if ($null -ne $t) {
+        Write-Output "##[debug][Upload] State after Wait-Job = $($t.State), HasMoreData = $($t.HasMoreData)"
+        Write-Output "##[debug][Upload] JobStateInfo.State = $($t.JobStateInfo.State), JobStateInfo.Reason = $($t.JobStateInfo.Reason)"
+        Write-Output "##[debug][Upload] ChildJobs.Count = $($t.ChildJobs.Count)"
+        if ($t.ChildJobs.Count -gt 0) {
+            $t.ChildJobs | ForEach-Object { Write-Output "##[debug][Upload] ChildJob Id=$($_.Id) State=$($_.State) Error=$($_.Error)" }
+        }
+    }
     $t | Receive-Job
-
-    # Assert-AreEqual "Completed" $t.State
+    if ($null -ne $t) {
+        Write-Output "##[debug][Upload] State after Receive-Job = $($t.State)"
+    }
+    Assert-AreEqual "Completed" $t.State
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -72,10 +86,25 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $file[1].Name $objectName2
 
     $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob
+    Write-Output "##[debug][Download] After -AsJob: `$t is null = $($null -eq $t)"
+    if ($null -ne $t) {
+        Write-Output "##[debug][Download] `$t type = $($t.GetType().FullName), Id = $($t.Id), State before Wait = $($t.State)"
+    }
     $t | Wait-Job
+    if ($null -ne $t) {
+        Write-Output "##[debug][Download] State after Wait-Job = $($t.State), HasMoreData = $($t.HasMoreData)"
+        Write-Output "##[debug][Download] JobStateInfo.State = $($t.JobStateInfo.State), JobStateInfo.Reason = $($t.JobStateInfo.Reason)"
+        Write-Output "##[debug][Download] ChildJobs.Count = $($t.ChildJobs.Count)"
+        if ($t.ChildJobs.Count -gt 0) {
+            $t.ChildJobs | ForEach-Object { Write-Output "##[debug][Download] ChildJob Id=$($_.Id) State=$($_.State) Error=$($_.Error)" }
+        }
+    }
     $t | Receive-Job
-
-    # Assert-AreEqual "Completed" $t.State
+    if ($null -ne $t) {
+        Write-Output "##[debug][Download] State after Receive-Job = $($t.State)"
+    }
+    Assert-AreEqual "Completed" $t.State
+    Assert-Null $t.Error
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 
