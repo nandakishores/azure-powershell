@@ -12,7 +12,7 @@ param (
     [string] $RunPowerShell
 )
 
-Write-Host "##vso[task.setprogress value=1;]Initializing live test scenarios"
+Write-Output "##vso[task.setprogress value=1;]Initializing live test scenarios"
 
 $srcDir = Join-Path -Path ${env:BUILD_SOURCESDIRECTORY} -ChildPath "src"
 $targetModules = @("Storage", "Dns", "Automation", "ApplicationInsights", "Databricks", "ContainerInstance")
@@ -143,7 +143,7 @@ while ($queuedJobs.Count -gt 0) {
     }
     $runningModules = ($runningJobs | Select-Object -ExpandProperty Module) -join ", "
     $progressMsg = "Total: $totalJobsCount | Waiting: $($waitingJobs.Count) | Running: $($runningJobs.Count) [$runningModules] | Completed: $completedJobsCount"
-    Write-Host "##vso[task.setprogress value=$progressValue;]$progressMsg"
+    Write-Output "##vso[task.setprogress value=$progressValue;]$progressMsg"
 
     if ($queuedJobs.Count -gt 0) {
         Start-Sleep -Seconds 60
