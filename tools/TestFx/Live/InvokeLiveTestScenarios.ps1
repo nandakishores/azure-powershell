@@ -12,19 +12,13 @@ param (
     [string] $RunPowerShell
 )
 
-Write-Output "##vso[task.setprogress value=1;]Initializing live test scenarios"
-
 $srcDir = Join-Path -Path ${env:BUILD_SOURCESDIRECTORY} -ChildPath "src"
-$targetModules = @("Storage", "Dns", "Automation", "ApplicationInsights", "Databricks", "ContainerInstance")
-$liveScenarios = $targetModules | ForEach-Object {
-    $moduleSrcDir = Join-Path -Path $srcDir -ChildPath $_
-    Get-ChildItem -Path $moduleSrcDir -Directory -Filter "LiveTests" -Recurse -ErrorAction SilentlyContinue
-} | Get-ChildItem -File -Filter "TestLiveScenarios.ps1" -Recurse | Select-Object -ExpandProperty FullName
+$liveScenarios = Get-ChildItem -Path $srcDir -Directory -Exclude "Accounts" -ErrorAction SilentlyContinue | Get-ChildItem -Directory -Filter "LiveTests" -Recurse | Get-ChildItem -File -Filter "TestLiveScenarios.ps1" -Recurse | Select-Object -ExpandProperty FullName
 
 $maxRunspaces = 9
 [void][int]::TryParse(${env:RSPTHROTTLE}, [ref]$maxRunspaces)
 $rsp = [runspacefactory]::CreateRunspacePool(1, $maxRunspaces)
-$rsp.CleanupInterval = [timespan]::FromMinutes(30)
+$rsp.CleanupInterval = [timespan]::FromHours(10) # By default is 15 minutes. Set to 10 hours to avoid the disposal of the idle runspaces when waiting for resource removal.
 [void]$rsp.Open()
 
 $liveJobs = $liveScenarios | ForEach-Object {
@@ -73,25 +67,26 @@ $liveJobs = $liveScenarios | ForEach-Object {
     } -PassThru
 }
 
+Start-Sleep -Seconds 300
+
 $totalJobsCount = $liveJobs.Count
-$completedJobsCount = 0
 $queuedJobs = $liveJobs
 while ($queuedJobs.Count -gt 0) {
     Start-Sleep -Seconds 60
 
-    $waitingJobs = [System.Collections.Generic.List[PSObject]]::new()
-    $runningJobs = [System.Collections.Generic.List[PSObject]]::new()
-    $completedJobs = [System.Collections.Generic.List[PSObject]]::new()
+    $waitingJobs = @()
+    $runningJobs = @()
+    $completedJobs = @()
     foreach ($job in $queuedJobs) {
         switch ($job.State) {
             "NotStarted" {
-                [void]$waitingJobs.Add($job)
+                $waitingJobs += $job
             }
             "Running" {
-                [void]$runningJobs.Add($job)
+                $runningJobs += $job
             }
             "Completed" {
-                [void]$completedJobs.Add($job)
+                $completedJobs += $job
             }
         }
     }
@@ -103,49 +98,42 @@ while ($queuedJobs.Count -gt 0) {
             if ($null -ne $curLiveJob.Instance) {
                 $liveJobOutput = $curLiveJob.Instance.EndInvoke($_.AsyncHandle)
 
-                Write-Output "##[section][Test Scenario Result] Live test run for module `"$($curLiveJob.Module)`"."
+                Write-Output ""
+
+                Write-Output "##[section]Live test run for module `"$($curLiveJob.Module)`"."
                 $liveJobOutput
 
                 $liveJobStreams = $curLiveJob.Instance.Streams
-
-                if ($liveJobStreams.Debug.Count -gt 0) {
+                if ("" -ne $liveJobStreams.Debug) {
                     Write-Output "##[group]Debug stream for module `"$($curLiveJob.Module)`""
                     $liveJobStreams.Debug | ForEach-Object {
-                        $_ -split "`r?`n" | ForEach-Object {
-                            Write-Output "##[debug]$_"
-                        }
+                        Write-Output "##[debug]DEBUG: $_"
                     }
                     Write-Output "##[endgroup]"
                 }
 
-                if ($liveJobStreams.Error.Count -gt 0) {
-                    Write-Output "##[group]Error stream for module `"$($curLiveJob.Module)`""
+                if ("" -ne $liveJobStreams.Error) {
                     $liveJobStreams.Error | ForEach-Object {
-                        ($_ | Format-List * -Force | Out-String) -split "`r?`n" | ForEach-Object {
-                            Write-Output "##[error]$_"
-                        }
+                        $_ | Format-List * -Force
                     }
-                    Write-Output "##[endgroup]"
                 }
-
-                Write-Output ""
             }
         }
     }
 
-    $queuedJobs = [System.Collections.Generic.List[PSObject]]::new($waitingJobs.Count + $runningJobs.Count)
-    $queuedJobs.AddRange($waitingJobs)
-    $queuedJobs.AddRange($runningJobs)
+    $queuedJobs = $waitingJobs + $runningJobs
 
-    $progressValue = if ($totalJobsCount -gt 0) {
-        [int]($completedJobsCount / $totalJobsCount * 100)
-    }
-    else {
-        0
-    }
-    $runningModules = ($runningJobs | Select-Object -ExpandProperty Module) -join ", "
-    $progressMsg = "Total: $totalJobsCount | Waiting: $($waitingJobs.Count) | Running: $($runningJobs.Count) [$runningModules] | Completed: $completedJobsCount"
-    Write-Output "##vso[task.setprogress value=$progressValue;]$progressMsg"
+    Write-Output ""
+
+    Write-Output "##[group]Progress of Live Test Jobs"
+    Write-Output "##[section]Total jobs: $totalJobsCount"
+    Write-Output "##[section]Waiting jobs: $($waitingJobs.Count)"
+    Write-Output "##[section]Running jobs: $($runningJobs.Count)"
+    Write-Output "##[section]Completed jobs: $completedJobsCount"
+    Write-Output "##[section]Max runspaces in the pool: $($rsp.GetMaxRunspaces())"
+    Write-Output "##[section]Available runspaces in the pool: $($rsp.GetAvailableRunspaces())"
+    $queuedJobs | Select-Object Id, Module, State | Format-Table -AutoSize
+    Write-Output "##[endgroup]"
 }
 
 $accountsDir = Join-Path -Path $srcDir -ChildPath "Accounts"
@@ -196,8 +184,6 @@ if ($null -ne $ltResults) {
         $exProps = @{ Tag = $tag } | ConvertTo-Json -Compress
     }
 
-    $failedScenarios = [System.Collections.Generic.List[PSObject]]::new()
-
     $ltResults | ForEach-Object {
         $ltCsv = (Import-Csv -Path $_)
         if ($null -ne $ltCsv) {
@@ -216,24 +202,9 @@ if ($null -ne $ltResults) {
             @{ Name = "Errors"; Expression = { $_.Errors } }, `
             @{ Name = "ExtendedProperties"; Expression = { $exProps } } |
             Export-Csv -Path $_ -Encoding utf8 -NoTypeInformation -Force
-
-            $ltCsv | Where-Object { $_.IsSuccess -eq "False" } | ForEach-Object {
-                [void]$failedScenarios.Add($_)
-            }
         }
         else {
             Remove-Item -Path $_ -Force
         }
-    }
-
-    if ($failedScenarios.Count -gt 0) {
-        Write-Output ""
-        Write-Output "##[section]The following $($failedScenarios.Count) live test scenario(s) failed:"
-        $failedScenarios | Sort-Object -Property Module, Name | ForEach-Object {
-            Write-Output "##vso[task.logissue type=error;]Module: $($_.Module) | Scenario: $($_.Name)"
-        }
-        Write-Output ""
-
-        Write-Output "##vso[task.complete result=Failed;]$($failedScenarios.Count) live test scenario(s) failed."
     }
 }

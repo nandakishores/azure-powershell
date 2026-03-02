@@ -22,31 +22,14 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $Share[0].Name $shareName
 
     # upload file
-    $t = $null
-    $uploadCmdletErr = $null
-    try {
-        $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob
-    }
-    catch {
-        $uploadCmdletErr = $_.Exception.Message
-    }
-    $diag = "[Upload-DIAG] isNull=$($null -eq $t), cmdletException='$uploadCmdletErr'"
-    if ($null -ne $t) {
-        $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
-        $t | Wait-Job
-        $diag += ", stateAfterWait=$($t.State), hasMoreData=$($t.HasMoreData)"
-        $diag += ", jobStateInfo=$($t.JobStateInfo.State), reason=$($t.JobStateInfo.Reason)"
-        $diag += ", childJobs=$($t.ChildJobs.Count)"
-        if ($t.ChildJobs.Count -gt 0) {
-            $t.ChildJobs | ForEach-Object { $diag += ", child(id=$($_.Id) state=$($_.State) err=$($_.Error))" }
-        }
-        $t | Receive-Job
-        $diag += ", stateAfterReceive=$($t.State)"
-    }
-    else {
-        $diag += ", CONCLUSION: `$t is NULL - cmdlet produced no output"
-    }
-    Assert-AreEqual "Completed" $t.State "[Upload] expected State='Completed' but got='$($t.State)'. $diag"
+    # Note: Use $t.JobStateInfo.State instead of $t.State because the ETS ScriptProperty
+    # 'State' on System.Management.Automation.Job does not work reliably for
+    # AzureLongRunningJob in runspace pool contexts. $t.State returns '' while
+    # $t.JobStateInfo.State correctly returns 'Completed'. This is a known ETS issue.
+    $t = Set-AzStorageFileContent -source $testfile512path -ShareName $shareName -Path $objectName1 -Force -Context $ctx -AsJob
+    $t | Wait-Job
+    $t | Receive-Job
+    Assert-AreEqual "Completed" $t.JobStateInfo.State
     Assert-Null $t.Error
 
     # upload/remove file/dir with -DisAllowTrailingDot
@@ -91,31 +74,11 @@ Invoke-LiveTestScenario -Name "File basics" -Description "Test File basic operat
     Assert-AreEqual $file[0].Name $objectName1
     Assert-AreEqual $file[1].Name $objectName2
 
-    $t = $null
-    $downloadCmdletErr = $null
-    try {
-        $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob
-    }
-    catch {
-        $downloadCmdletErr = $_.Exception.Message
-    }
-    $diag = "[Download-DIAG] isNull=$($null -eq $t), cmdletException='$downloadCmdletErr'"
-    if ($null -ne $t) {
-        $diag += ", type=$($t.GetType().FullName), id=$($t.Id), stateBeforeWait=$($t.State)"
-        $t | Wait-Job
-        $diag += ", stateAfterWait=$($t.State), hasMoreData=$($t.HasMoreData)"
-        $diag += ", jobStateInfo=$($t.JobStateInfo.State), reason=$($t.JobStateInfo.Reason)"
-        $diag += ", childJobs=$($t.ChildJobs.Count)"
-        if ($t.ChildJobs.Count -gt 0) {
-            $t.ChildJobs | ForEach-Object { $diag += ", child(id=$($_.Id) state=$($_.State) err=$($_.Error))" }
-        }
-        $t | Receive-Job
-        $diag += ", stateAfterReceive=$($t.State)"
-    }
-    else {
-        $diag += ", CONCLUSION: `$t is NULL - cmdlet produced no output"
-    }
-    Assert-AreEqual "Completed" $t.State "[Download] expected State='Completed' but got='$($t.State)'. $diag"
+    # Note: Use $t.JobStateInfo.State instead of $t.State (see upload comment above)
+    $t = Get-AzStorageFileContent -ShareName $shareName -Path $objectName1 -Destination $localDestFile -Force -Context $ctx -AsJob
+    $t | Wait-Job
+    $t | Receive-Job
+    Assert-AreEqual "Completed" $t.JobStateInfo.State
     Assert-Null $t.Error
     Assert-AreEqual (Get-FileHash -Path $localDestFile -Algorithm MD5).Hash (Get-FileHash -Path $testfile512path -Algorithm MD5).Hash
 
